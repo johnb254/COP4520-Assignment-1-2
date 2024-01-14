@@ -5,12 +5,9 @@
 #include <chrono>
 #include <vector>
 #include <thread>
-#include <cmath>
 #include <fstream>
-#include <mutex>
 
 using namespace std;
-mutex mtx;
 
 /**
  * Given a number, returns whether it is prime or not
@@ -25,7 +22,7 @@ static bool isPrime(int num)
 	if (num % 2 == 0) return false;
 
 	// checks all odd numbers up to the square root of the number
-	for (int i = 3; i <= sqrt(num); i += 2)
+	for (int i = 3; i * i <= num; i += 2)
 	{
 		// if the number is divisible by any number up to its square root, it is not prime
 		if (num % i == 0)
@@ -42,14 +39,12 @@ static bool isPrime(int num)
  * @param end Inclusive end of the range
  * @param primes Vector to store the prime numbers in
  */
-static void findPrimesInRange(int start, int end, vector<int64_t>& primes)
+static void findPrimesInRange(int start, int end, vector<int64_t>& primesThread)
 {
 	// there are no primes less than 2, so start at 2
 	if (start < 2) start = 2;
 	if (start == 2) {
-		mtx.lock();
-		primes.push_back(2);
-		mtx.unlock();
+		primesThread.push_back(2);
 	}
 	// if the start is even, increment it by 1
 	if (start % 2 == 0) start++;
@@ -58,9 +53,7 @@ static void findPrimesInRange(int start, int end, vector<int64_t>& primes)
 	{
 		if (isPrime(num))
 		{
-			mtx.lock();
-			primes.push_back(num);
-			mtx.unlock();
+			primesThread.push_back(num);
 		}
 	}
 }
@@ -72,6 +65,7 @@ int main()
 	const int NUM_THREADS = 8;
 
 	vector<int64_t> primes;
+	vector<vector<int64_t>> primeThreads(NUM_THREADS);
 	vector<thread> threads;
 
 	const int RANGE = END - START + 1;
@@ -89,7 +83,7 @@ int main()
 	{
 		int threadStart = START + i * CHUNK_SIZE;
 		int threadEnd = (i == NUM_THREADS - 1) ? END : threadStart + CHUNK_SIZE - 1;
-		threads.emplace_back(findPrimesInRange, threadStart, threadEnd, ref(primes));
+		threads.emplace_back(findPrimesInRange, threadStart, threadEnd, ref(primeThreads[i]));
 	}
 
 	// waits for all threads to finish
@@ -101,6 +95,12 @@ int main()
 	// end timer and calculate duration
 	auto end = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+	// merge all the vectors of primes into one vector
+	for (const auto &primeList : primeThreads)
+	{
+		primes.insert(primes.end(), primeList.begin(), primeList.end());
+	}
 
 	// sort in ascending order and calculate total
 	sort(primes.begin(), primes.end());
