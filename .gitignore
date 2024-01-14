@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+/A1-2/.vs
+/A1-2/out
