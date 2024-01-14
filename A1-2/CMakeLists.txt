@@ -12,10 +12,8 @@ endif()
 project ("A1-2")
 
 # Add source to this project's executable.
-add_executable (A1-2 "A1-2.cpp" "A1-2.h")
+add_executable (A1-2 "A1-2.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET A1-2 PROPERTY CXX_STANDARD 20)
 endif()
-
-# TODO: Add tests and install targets if needed.
